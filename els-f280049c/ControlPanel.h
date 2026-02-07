@@ -189,6 +189,7 @@ public:
 
     // set a brightness value, 0 (off) to 8 (max)
     void setBrightness(Uint16 brightness);
+    Uint16 getBrightness(void) const;
 
     // refresh the hardware display
     void refresh(void);

@@ -296,8 +296,14 @@ void ControlPanel :: setMessage( const Uint16 *message )
 void ControlPanel :: setBrightness( Uint16 brightness )
 {
     if( brightness > 8 ) brightness = 8;
+    if( brightness < 1 ) brightness = 1;
 
     this->brightness = brightness;
+}
+
+Uint16 ControlPanel :: getBrightness(void) const
+{
+    return this->brightness;
 }
 
 void ControlPanel :: refresh()

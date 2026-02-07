@@ -56,11 +56,23 @@ private:
     const MESSAGE *message;
     Uint16 messageTime;
 
+    enum SettingsMode
+    {
+        SETTINGS_NONE = 0,
+        SETTINGS_MENU,
+        SETTINGS_BRIGHTNESS
+    };
+
+    SettingsMode settingsMode;
+    Uint16 settingsIndex;
+    Uint16 pendingBrightness;
+
     const FEED_THREAD *loadFeedTable();
     LED_REG calculateLEDs();
     void setMessage(const MESSAGE *message);
     void overrideMessage( void );
     void clearMessage( void );
+    void handleSettings(void);
 
 public:
     UserInterface(ControlPanel *controlPanel, Core *core, FeedTableFactory *feedTableFactory);

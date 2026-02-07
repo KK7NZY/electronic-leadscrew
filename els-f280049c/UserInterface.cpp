@@ -39,17 +39,19 @@ const MESSAGE STARTUP_MESSAGE_1 =
  .next = &STARTUP_MESSAGE_2
 };
 
-const MESSAGE SETTINGS_MESSAGE_2 =
+const Uint16 SETTINGS_MENU_BRIGHTNESS[8] =
 {
- .message = { LETTER_S, LETTER_E, LETTER_T, LETTER_T, LETTER_I, LETTER_N, LETTER_G, LETTER_S },
- .displayTime = UI_REFRESH_RATE_HZ * .5
+    LETTER_B, LETTER_R, LETTER_I, LETTER_G, LETTER_H, LETTER_T, BLANK, BLANK
 };
 
-const MESSAGE SETTINGS_MESSAGE_1 =
+const Uint16 SETTINGS_MENU_EXIT[8] =
 {
- .message = { BLANK, BLANK, BLANK, LETTER_N, LETTER_O, BLANK, BLANK, BLANK },
- .displayTime = UI_REFRESH_RATE_HZ * .5,
- .next = &SETTINGS_MESSAGE_2
+    LETTER_E, LETTER_X, LETTER_I, LETTER_T, BLANK, BLANK, BLANK, BLANK
+};
+
+static Uint16 SETTINGS_BRIGHTNESS_EDIT[8] =
+{
+    LETTER_B, LETTER_R, LETTER_I, LETTER_G, LETTER_H, LETTER_T, BLANK, ZERO
 };
 
 extern const MESSAGE BACKLOG_PANIC_MESSAGE_2;
@@ -84,6 +86,10 @@ UserInterface :: UserInterface(ControlPanel *controlPanel, Core *core, FeedTable
 
     this->keys.all = 0xff;
 
+    this->settingsMode = SETTINGS_NONE;
+    this->settingsIndex = 0;
+    this->pendingBrightness = 0;
+
     // initialize the core so we start up correctly
     core->setReverse(this->reverse);
     core->setFeed(loadFeedTable());
@@ -116,6 +122,83 @@ LED_REG UserInterface::calculateLEDs()
     }
 
     return leds;
+}
+
+static Uint16 digitSegments(Uint16 value)
+{
+    switch( value )
+    {
+        case 0: return ZERO;
+        case 1: return ONE;
+        case 2: return TWO;
+        case 3: return THREE;
+        case 4: return FOUR;
+        case 5: return FIVE;
+        case 6: return SIX;
+        case 7: return SEVEN;
+        case 8: return EIGHT;
+        case 9: return NINE;
+        default: return BLANK;
+    }
+}
+
+void UserInterface :: handleSettings(void)
+{
+    const Uint16 settingsCount = 2;
+
+    if( this->settingsMode == SETTINGS_MENU )
+    {
+        if( keys.bit.UP )
+        {
+            if( this->settingsIndex == 0 )
+                this->settingsIndex = settingsCount - 1;
+            else
+                this->settingsIndex--;
+        }
+        if( keys.bit.DOWN )
+        {
+            this->settingsIndex = (this->settingsIndex + 1) % settingsCount;
+        }
+        if( keys.bit.SET )
+        {
+            if( this->settingsIndex == 0 )
+            {
+                this->pendingBrightness = controlPanel->getBrightness();
+                if( this->pendingBrightness < 1 ) this->pendingBrightness = 1;
+                this->settingsMode = SETTINGS_BRIGHTNESS;
+            }
+            else
+            {
+                this->settingsMode = SETTINGS_NONE;
+                controlPanel->setMessage(NULL);
+                return;
+            }
+        }
+
+        if( this->settingsIndex == 0 )
+            controlPanel->setMessage(SETTINGS_MENU_BRIGHTNESS);
+        else
+            controlPanel->setMessage(SETTINGS_MENU_EXIT);
+    }
+    else if( this->settingsMode == SETTINGS_BRIGHTNESS )
+    {
+        if( keys.bit.UP )
+        {
+            if( this->pendingBrightness < 8 ) this->pendingBrightness++;
+        }
+        if( keys.bit.DOWN )
+        {
+            if( this->pendingBrightness > 1 ) this->pendingBrightness--;
+        }
+        if( keys.bit.SET )
+        {
+            controlPanel->setBrightness(this->pendingBrightness);
+            this->settingsMode = SETTINGS_MENU;
+        }
+
+        SETTINGS_BRIGHTNESS_EDIT[7] = digitSegments(this->pendingBrightness);
+        controlPanel->setMessage(SETTINGS_BRIGHTNESS_EDIT);
+    }
 }
 
 void UserInterface :: setMessage(const MESSAGE *message)
@@ -165,6 +248,13 @@ void UserInterface :: loop( void )
     // read keypresses from the control panel
     keys = controlPanel->getKeys();
 
+    if( this->settingsMode != SETTINGS_NONE )
+    {
+        handleSettings();
+        controlPanel->refresh();
+        return;
+    }
+
     // respond to keypresses
     if( currentRpm == 0 )
     {
@@ -191,10 +281,12 @@ void UserInterface :: loop( void )
                 this->reverse = ! this->reverse;
                 core->setReverse(this->reverse);
             }
-            if( keys.bit.SET )
-            {
-                setMessage(&SETTINGS_MESSAGE_1);
-            }
+        }
+        if( keys.bit.SET )
+        {
+            this->settingsMode = SETTINGS_MENU;
+            this->settingsIndex = 0;
+            clearMessage();
         }
     }
 
