@@ -51,6 +51,7 @@ public:
     void initHardware( void );
 
     Uint16 getRPM( void );
+    Uint16 getSpindleAngle( void );
     Uint32 getPosition( void );
     Uint32 getMaxCount( void );
 };

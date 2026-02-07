@@ -110,3 +110,14 @@ Uint16 Encoder :: getRPM(void)
 
     return rpm;
 }
+
+Uint16 Encoder :: getSpindleAngle(void)
+{
+    Uint32 counts = getPosition() % ENCODER_RESOLUTION;
+    Uint32 angleTenths = (counts * 3600UL) / ENCODER_RESOLUTION;
+
+    if( angleTenths >= 3600UL )
+        angleTenths = 0;
+
+    return (Uint16)angleTenths;
+}

@@ -194,7 +194,7 @@ void ControlPanel :: decomposeSpindleAngle()
     int i;
 
     for(i=3; i>=0; i--) {
-        if( i == 1 )
+        if( i == 2 )
             this->sevenSegmentData[i] = lcd_char(angle % 10) | lcd_char(10);
         else
             this->sevenSegmentData[i] = (angle == 0 && i != 3) ? 0 : lcd_char(angle % 10);
