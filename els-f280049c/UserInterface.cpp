@@ -49,6 +49,16 @@ const Uint16 SETTINGS_MENU_EXIT[8] =
     LETTER_E, LETTER_X, LETTER_I, LETTER_T, BLANK, BLANK, BLANK, BLANK
 };
 
+const Uint16 SETTINGS_MENU_ANGLE[8] =
+{
+    LETTER_A, LETTER_N, LETTER_G, LETTER_L, LETTER_E, BLANK, BLANK, BLANK
+};
+
+static Uint16 SETTINGS_ANGLE_EDIT[8] =
+{
+    LETTER_A, LETTER_N, LETTER_G, BLANK, LETTER_O, LETTER_F, LETTER_F, BLANK
+};
+
 static Uint16 SETTINGS_BRIGHTNESS_EDIT[8] =
 {
     LETTER_B, LETTER_R, LETTER_I, LETTER_G, LETTER_H, LETTER_T, BLANK, ZERO
@@ -72,11 +82,12 @@ const MESSAGE BACKLOG_PANIC_MESSAGE_2 =
 
 const Uint16 VALUE_BLANK[4] = { BLANK, BLANK, BLANK, BLANK };
 
-UserInterface :: UserInterface(ControlPanel *controlPanel, Core *core, FeedTableFactory *feedTableFactory)
+UserInterface :: UserInterface(ControlPanel *controlPanel, Core *core, FeedTableFactory *feedTableFactory, Encoder *encoder)
 {
     this->controlPanel = controlPanel;
     this->core = core;
     this->feedTableFactory = feedTableFactory;
+    this->encoder = encoder;
 
     this->metric = false; // start out with imperial
     this->thread = false; // start out with feeds
@@ -89,6 +100,8 @@ UserInterface :: UserInterface(ControlPanel *controlPanel, Core *core, FeedTable
     this->settingsMode = SETTINGS_NONE;
     this->settingsIndex = 0;
     this->pendingBrightness = 0;
+    this->pendingAngle = 0;
+    this->showAngleWhenPowerOff = false;
 
     // initialize the core so we start up correctly
     core->setReverse(this->reverse);
@@ -144,7 +157,7 @@ static Uint16 digitSegments(Uint16 value)
 
 void UserInterface :: handleSettings(void)
 {
-    const Uint16 settingsCount = 2;
+    const Uint16 settingsCount = 3;
 
     if( this->settingsMode == SETTINGS_MENU )
     {
@@ -167,6 +180,11 @@ void UserInterface :: handleSettings(void)
                 if( this->pendingBrightness < 1 ) this->pendingBrightness = 1;
                 this->settingsMode = SETTINGS_BRIGHTNESS;
             }
+            else if( this->settingsIndex == 1 )
+            {
+                this->pendingAngle = this->showAngleWhenPowerOff ? 1 : 0;
+                this->settingsMode = SETTINGS_ANGLE;
+            }
             else
             {
                 this->settingsMode = SETTINGS_NONE;
@@ -177,6 +195,8 @@ void UserInterface :: handleSettings(void)
 
         if( this->settingsIndex == 0 )
             controlPanel->setMessage(SETTINGS_MENU_BRIGHTNESS);
+        else if( this->settingsIndex == 1 )
+            controlPanel->setMessage(SETTINGS_MENU_ANGLE);
         else
             controlPanel->setMessage(SETTINGS_MENU_EXIT);
     }
@@ -198,6 +218,32 @@ void UserInterface :: handleSettings(void)
 
         SETTINGS_BRIGHTNESS_EDIT[7] = digitSegments(this->pendingBrightness);
         controlPanel->setMessage(SETTINGS_BRIGHTNESS_EDIT);
+    }
+    else if( this->settingsMode == SETTINGS_ANGLE )
+    {
+        if( keys.bit.UP || keys.bit.DOWN )
+            this->pendingAngle = this->pendingAngle ? 0 : 1;
+        if( keys.bit.SET )
+        {
+            this->showAngleWhenPowerOff = (this->pendingAngle != 0);
+            this->settingsMode = SETTINGS_MENU;
+        }
+
+        if( this->pendingAngle )
+        {
+            SETTINGS_ANGLE_EDIT[4] = LETTER_O;
+            SETTINGS_ANGLE_EDIT[5] = LETTER_N;
+            SETTINGS_ANGLE_EDIT[6] = BLANK;
+            SETTINGS_ANGLE_EDIT[7] = BLANK;
+        }
+        else
+        {
+            SETTINGS_ANGLE_EDIT[4] = LETTER_O;
+            SETTINGS_ANGLE_EDIT[5] = LETTER_F;
+            SETTINGS_ANGLE_EDIT[6] = LETTER_F;
+            SETTINGS_ANGLE_EDIT[7] = BLANK;
+        }
+        controlPanel->setMessage(SETTINGS_ANGLE_EDIT);
     }
 }
 
@@ -251,7 +297,7 @@ void UserInterface :: loop( void )
     if( this->settingsMode != SETTINGS_NONE )
     {
         handleSettings();
-        controlPanel->refresh();
+        controlPanel->refresh(false);
         return;
     }
 
@@ -317,10 +363,16 @@ void UserInterface :: loop( void )
     controlPanel->setValue(feedTable->current()->display);
     controlPanel->setRPM(currentRpm);
 
+    bool showAngle = (!core->isPowerOn() && this->showAngleWhenPowerOff);
+    if( showAngle )
+    {
+        controlPanel->setSpindleAngle(encoder->getSpindleAngle());
+    }
+
     if( ! core->isPowerOn() )
     {
         controlPanel->setValue(VALUE_BLANK);
     }
 
-    controlPanel->refresh();
+    controlPanel->refresh(showAngle);
 }

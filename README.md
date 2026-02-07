@@ -80,6 +80,16 @@ replace the lathe change gears or quick-change gearbox with an electronic virtua
 set to almost any ratio.  The lathe will continue to operate normally, with the operator closing and opening
 the half-nuts to control feeding and threading.
 
+## Controller Settings Menu
+The control panel supports a settings menu accessed with the `SET` button. The menu is available when the
+spindle is stopped. Use `UP`/`DOWN` to navigate, and `SET` to select.
+
+Settings:
+* `BRIGHT` - Adjust display brightness (range 1-8). Use `UP`/`DOWN` to change, `SET` to confirm.
+* `ANGLE` - Toggle live spindle angle display when power is off. `ON` shows spindle angle (0.0-359.9 degrees)
+  on the RPM display; `OFF` shows RPM as usual. Use `UP`/`DOWN` to toggle, `SET` to confirm.
+* `EXIT` - Leave the settings menu.
+
 ## Hardware Configuration
 If you want to get this running on your own LaunchXL-F280049C board, here are the settings you will need.
 See the documentation at the link above for more details.

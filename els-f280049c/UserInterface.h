@@ -30,6 +30,7 @@
 #include "ControlPanel.h"
 #include "Core.h"
 #include "Tables.h"
+#include "Encoder.h"
 
 typedef struct MESSAGE
 {
@@ -44,6 +45,7 @@ private:
     ControlPanel *controlPanel;
     Core *core;
     FeedTableFactory *feedTableFactory;
+    Encoder *encoder;
 
     bool metric;
     bool thread;
@@ -60,12 +62,15 @@ private:
     {
         SETTINGS_NONE = 0,
         SETTINGS_MENU,
-        SETTINGS_BRIGHTNESS
+        SETTINGS_BRIGHTNESS,
+        SETTINGS_ANGLE
     };
 
     SettingsMode settingsMode;
     Uint16 settingsIndex;
     Uint16 pendingBrightness;
+    Uint16 pendingAngle;
+    bool showAngleWhenPowerOff;
 
     const FEED_THREAD *loadFeedTable();
     LED_REG calculateLEDs();
@@ -75,7 +80,7 @@ private:
     void handleSettings(void);
 
 public:
-    UserInterface(ControlPanel *controlPanel, Core *core, FeedTableFactory *feedTableFactory);
+    UserInterface(ControlPanel *controlPanel, Core *core, FeedTableFactory *feedTableFactory, Encoder *encoder);
 
     void loop( void );
 

@@ -144,8 +144,11 @@ private:
     // current override message, or NULL if none
     const Uint16 *message;
 
-    // brightness, levels 1-8, 0=off
+    // brightness, levels 1-8
     Uint16 brightness;
+
+    // Current spindle angle value (0-3599 = 0.0 to 359.9 degrees)
+    Uint16 spindleAngle;
 
     // Derived state, calculated internally
     Uint16 sevenSegmentData[8];
@@ -154,6 +157,7 @@ private:
     Uint16 dummy;
 
     void decomposeRPM(void);
+    void decomposeSpindleAngle(void);
     void decomposeValue(void);
     KEY_REG readKeys(void);
     Uint16 lcd_char(Uint16 x);
@@ -187,12 +191,15 @@ public:
     // set a message that overrides the display, 8 characters required
     void setMessage(const Uint16 *message);
 
-    // set a brightness value, 0 (off) to 8 (max)
+    // set a brightness value, 1 (min) to 8 (max)
     void setBrightness(Uint16 brightness);
     Uint16 getBrightness(void) const;
 
+    // set the spindle angle value to display
+    void setSpindleAngle(Uint16 angle);
+
     // refresh the hardware display
-    void refresh(void);
+    void refresh(bool showAngle);
 };
 
 
@@ -209,6 +216,11 @@ inline void ControlPanel :: setValue(const Uint16 *value)
 inline void ControlPanel :: setLEDs(LED_REG leds)
 {
     this->leds = leds;
+}
+
+inline void ControlPanel :: setSpindleAngle(Uint16 angle)
+{
+    this->spindleAngle = angle;
 }
 
 
