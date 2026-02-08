@@ -71,6 +71,10 @@ private:
     Uint16 pendingBrightness;
     Uint16 pendingAngle;
     bool showAngleWhenPowerOff;
+    Uint16 setHoldTicks;
+    bool setHeldLastLoop;
+    bool setLongPressFired;
+    bool ignoreNextSetRelease;
 
     const FEED_THREAD *loadFeedTable();
     LED_REG calculateLEDs();

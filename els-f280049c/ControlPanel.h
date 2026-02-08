@@ -178,6 +178,7 @@ public:
 
     // poll the keys and return a mask
     KEY_REG getKeys(void);
+    KEY_REG getLatchedKeys(void) const;
 
     // set the RPM value to display
     void setRPM(Uint16 rpm);
@@ -221,6 +222,11 @@ inline void ControlPanel :: setLEDs(LED_REG leds)
 inline void ControlPanel :: setSpindleAngle(Uint16 angle)
 {
     this->spindleAngle = angle;
+}
+
+inline KEY_REG ControlPanel :: getLatchedKeys(void) const
+{
+    return this->keys;
 }
 
 

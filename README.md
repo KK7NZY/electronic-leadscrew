@@ -18,6 +18,15 @@ be ready to kill the power in an emergency.
 
 ## Latest Version
 
+Version 1.4.01 adds the following features and fixes:
+* Honor the `START_POWER_ON` configuration so the drive boots enabled/disabled as desired
+* Add a settings menu (BRIGHT/ANGLE/EXIT) plus adjustable display brightness with persistence
+* Add an optional spindle-angle display with long-press SET zeroing when power is off
+* Add encoder angle zero-offset handling for user-defined references
+* Block feed/thread/direction changes unless power is on and RPM is zero
+* Allow temporary on-panel messages for settings edits and angle-zero confirmation
+* Add 22 TPI and 52 TPI entries to the inch feed/thread tables
+
 Version 1.4.00 adds the following features and fixes:
 * Automatically detect if the ELS hits its max 100KHz step rate and fail safe
 * Change the memory map to allow more thread and feed definitions
@@ -31,6 +40,10 @@ Version 1.3.01 added the following features and fixes:
 * Add support for lathes with separate feed and thread gearing
 
 [DOWNLOAD HERE](https://github.com/clough42/electronic-leadscrew/releases)
+
+## Changelog
+
+Recent firmware additions (core power handling, control-panel brightness/angle features, settings workflow, spindle angle zeroing, etc.) are documented in [CHANGELOG.md](CHANGELOG.md). Check it regularly for the latest details beyond the numbered release notes above.
 
 ## Project Status
 Beta.

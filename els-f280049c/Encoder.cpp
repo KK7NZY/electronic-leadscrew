@@ -32,6 +32,7 @@ Encoder :: Encoder( void )
 {
     this->previous = 0;
     this->rpm = 0;
+    this->zeroOffset = 0;
 }
 
 void Encoder :: initHardware(void)
@@ -113,11 +114,17 @@ Uint16 Encoder :: getRPM(void)
 
 Uint16 Encoder :: getSpindleAngle(void)
 {
-    Uint32 counts = getPosition() % ENCODER_RESOLUTION;
+    Uint32 rawCounts = getPosition() % ENCODER_RESOLUTION;
+    Uint32 counts = (rawCounts + ENCODER_RESOLUTION - (zeroOffset % ENCODER_RESOLUTION)) % ENCODER_RESOLUTION;
     Uint32 angleTenths = (counts * 3600UL) / ENCODER_RESOLUTION;
 
     if( angleTenths >= 3600UL )
         angleTenths = 0;
 
     return (Uint16)angleTenths;
+}
+
+void Encoder :: setAngleZero(void)
+{
+    zeroOffset = getPosition() % ENCODER_RESOLUTION;
 }

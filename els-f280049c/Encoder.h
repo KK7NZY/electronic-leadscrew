@@ -45,6 +45,7 @@ class Encoder
 private:
     Uint32 previous;
     Uint16 rpm;
+    Uint32 zeroOffset;
 
 public:
     Encoder( void );
@@ -54,6 +55,7 @@ public:
     Uint16 getSpindleAngle( void );
     Uint32 getPosition( void );
     Uint32 getMaxCount( void );
+    void setAngleZero( void );
 };
 
 

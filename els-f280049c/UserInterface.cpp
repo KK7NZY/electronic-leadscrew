@@ -28,7 +28,7 @@
 
 const MESSAGE STARTUP_MESSAGE_2 =
 {
-  .message = { LETTER_E, LETTER_L, LETTER_S, DASH, ONE | POINT, FOUR | POINT, ZERO, ZERO },
+  .message = { LETTER_E, LETTER_L, LETTER_S, DASH, ONE | POINT, FOUR | POINT, ZERO, ONE },
   .displayTime = UI_REFRESH_RATE_HZ * 1.5
 };
 
@@ -38,6 +38,15 @@ const MESSAGE STARTUP_MESSAGE_1 =
  .displayTime = UI_REFRESH_RATE_HZ * 1.5,
  .next = &STARTUP_MESSAGE_2
 };
+
+const MESSAGE ANGLE_ZERO_CONFIRM_MESSAGE =
+{
+ .message = { LETTER_Z, LETTER_E, LETTER_R, LETTER_O, BLANK, LETTER_O, LETTER_K, BLANK },
+ .displayTime = UI_REFRESH_RATE_HZ / 2,
+ .next = NULL
+};
+
+static const Uint16 ANGLE_ZERO_HOLD_TICKS = UI_REFRESH_RATE_HZ * 2;
 
 const Uint16 SETTINGS_MENU_BRIGHTNESS[8] =
 {
@@ -102,6 +111,10 @@ UserInterface :: UserInterface(ControlPanel *controlPanel, Core *core, FeedTable
     this->pendingBrightness = 0;
     this->pendingAngle = 0;
     this->showAngleWhenPowerOff = false;
+    this->setHoldTicks = 0;
+    this->setHeldLastLoop = false;
+    this->setLongPressFired = false;
+    this->ignoreNextSetRelease = false;
 
     // initialize the core so we start up correctly
     core->setReverse(this->reverse);
@@ -189,6 +202,7 @@ void UserInterface :: handleSettings(void)
             {
                 this->settingsMode = SETTINGS_NONE;
                 controlPanel->setMessage(NULL);
+                this->ignoreNextSetRelease = true;
                 return;
             }
         }
@@ -293,6 +307,55 @@ void UserInterface :: loop( void )
 
     // read keypresses from the control panel
     keys = controlPanel->getKeys();
+    KEY_REG heldKeys = controlPanel->getLatchedKeys();
+    bool setHeldNow = heldKeys.bit.SET != 0;
+
+    if( this->settingsMode == SETTINGS_NONE )
+    {
+        bool angleZeroEligible = (!core->isPowerOn() && this->showAngleWhenPowerOff && currentRpm == 0);
+
+        if( setHeldNow )
+        {
+            if( !this->setHeldLastLoop )
+            {
+                this->setHoldTicks = 0;
+                this->setLongPressFired = false;
+            }
+
+            if( this->setHoldTicks < ANGLE_ZERO_HOLD_TICKS )
+            {
+                this->setHoldTicks++;
+            }
+
+            if( angleZeroEligible && this->setHoldTicks >= ANGLE_ZERO_HOLD_TICKS && !this->setLongPressFired )
+            {
+                encoder->setAngleZero();
+                this->setLongPressFired = true;
+                setMessage(&ANGLE_ZERO_CONFIRM_MESSAGE);
+            }
+        }
+        else if( this->setHeldLastLoop )
+        {
+            if( !this->setLongPressFired && currentRpm == 0 && !this->ignoreNextSetRelease )
+            {
+                this->settingsMode = SETTINGS_MENU;
+                this->settingsIndex = 0;
+                clearMessage();
+            }
+
+            this->setHoldTicks = 0;
+            this->setLongPressFired = false;
+            this->ignoreNextSetRelease = false;
+        }
+
+        this->setHeldLastLoop = setHeldNow;
+    }
+    else
+    {
+        this->setHeldLastLoop = false;
+        this->setHoldTicks = 0;
+        this->setLongPressFired = false;
+    }
 
     if( this->settingsMode != SETTINGS_NONE )
     {
@@ -327,12 +390,6 @@ void UserInterface :: loop( void )
                 this->reverse = ! this->reverse;
                 core->setReverse(this->reverse);
             }
-        }
-        if( keys.bit.SET )
-        {
-            this->settingsMode = SETTINGS_MENU;
-            this->settingsIndex = 0;
-            clearMessage();
         }
     }
 
